@@ -1,0 +1,20 @@
+---
+- name: Copy XML files and directories from Ansible server to Windows server
+  hosts: win
+  gather_facts: false
+  tasks:
+    - name: Create destination directory if it doesnt exist
+      file:
+        path: /tmp/xml_files/
+        state: directory
+        mode: "0755"
+
+    - name: Copy XML files and directories
+      become: true
+      win_copy:
+        src: "/tmp/xml_files/" #Local Ansible dir with files
+        dest: D:\copy-test\ #Windows destination folder
+        force: yes
+        recurse: yes
+        exclude: "*"
+        include: "*.xml" #Only handle XML files

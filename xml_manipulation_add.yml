@@ -1,0 +1,26 @@
+---
+- name: Pull XML files, add variables, deploy to server
+  hosts: lnx
+  gather_facts: false
+  tasks:
+    - name: Find XML files
+      find:
+        paths: /tmp/xml_files/unarchive
+        file_type: any
+        recurse: yes
+        patterns: "*.xml"
+      register: xml_files
+
+    - name: Add variables to database section
+      blockinfile:
+        path: "{{ item.path }}"
+        block: |
+          <database>
+            <username>{{ db_username }}</username>
+            <password>{{ db_password }}</password>
+            <name>{{ client_name }}</name>
+            <server>{{ db_server }}</server>
+          </database>
+        marker: ""
+        insertbefore: "<imageslicer>"
+      loop: "{{ xml_files.files }}"

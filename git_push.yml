@@ -1,0 +1,40 @@
+---
+- name: Push local changes to Bitbucket repo
+  hosts: localhost
+  gather_facts: false
+  vars_prompt:
+    - name: bitbucket_username
+      prompt: "Enter your Bitbucket username"
+      private: no #Dont hide during typing
+
+    - name: bitbucket_password
+      prompt: "Enter your Bitbucket password"
+      private: yes #Hide during typing
+
+  vars:
+    local_repo_path: /tmp/repo
+
+  tasks:
+    - name: Clone or pull the Bitbucket repository
+      become: true
+      command: git -C "{{ local_repo_path }}" clone "https://{{ bitbucket_username }}:{{ bitbucket_password }}@example.bitbucket.com/repo-name.git".
+      args:
+        creates: "{{ local_repo_path }}/.git"
+
+    - name: Add local changes to the Git repository
+      become: true
+      command: git -C "{{ local_repo_path }}" add -A
+
+    - name: Commit local changes
+      become: true
+      command: git -C "{{ local_repo_path }}" commit -m "Ansible script auto-commit"
+
+    - name: Push changes to the Bitbucket repository
+      become: true
+      command: git -C "{{ local_repo_path }}" push
+
+    - name: Remove the cloned repository
+      become: true
+      file:
+        path: "{{ local_repo_path }}"
+        state: absent

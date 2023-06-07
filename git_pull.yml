@@ -1,0 +1,25 @@
+---
+- name: Pull Bitbucket repo
+- hosts: localhost
+  vars_prompt:
+    - name: bitbucket_username
+      prompt: "Enter your BitBucket username"
+      private: no #Dont hide during typing
+
+    - name: bitbucket_password
+      prompt: "Enter your BitBucket password"
+      private: yes  #Hide during typing
+
+  tasks:
+    - name: Create destination directory if it doesnt exist
+      file:
+        path: /tmp/repo/
+        state: directory
+        mode: "0755"
+
+    - name: Clone Git repo
+      git:
+        repo: "https://{{ bitbucket_username }}:{{ bitbucket_password }}@example.bitbucket.com/repo-name.git" #Link to the repo
+        dest: /tmp/repo/
+        clone: yes
+        update: yes

@@ -1,0 +1,13 @@
+---
+- name: Copy files and directories within Ansible server
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Copy XML files and directories to temp repo
+      command: cp -r /tmp/xml_files/unarchive/ /tmp/repo/
+
+    - name: Delete xml directories and files
+      command: rm -rf /tmp/xml_files
+      args:
+        warn: no

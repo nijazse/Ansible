@@ -1,0 +1,17 @@
+---
+- name: Unzip XML file on Ansible server
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Create directory
+      file:
+        path: /tmp/xml_files/unarchive
+        state: directory
+
+    - name: Unzip XML file
+      unarchive:
+        src: /tmp/xml_files/xml.zip
+        dest: /tmp/xml_files/unarchive
+        remote_src: yes
+        extra_opts: ['-o']

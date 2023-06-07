@@ -1,0 +1,21 @@
+---
+- name: Remove hardcoded values
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Find XML files
+      find:
+        paths: /tmp/xml_files/unarchive
+        file_type: any
+        recurse: yes
+        patterns: "*.xml"
+      register: xml_files
+
+    - name: Remove sensitive data from xml files
+      xml:
+        path: "{{ item.path }}"
+        xpath: "/c:client/c:database"
+        state: absent
+        namespaces:
+          c: "http://tempuri.org/client.xsd"
+      loop: "{{ xml_files.files }}"

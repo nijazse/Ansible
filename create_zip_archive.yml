@@ -1,0 +1,10 @@
+---
+- name: Create a zip archive on Windows host
+  hosts: win
+  gather_facts: false
+  tasks:
+    - name: Compress a directory to selected destination
+      community.windows.win_zip:
+        src: D:\copy-test\
+        dest: D:\zip-test\xml.zip
+        #Add create xml temp dir before this, delete it after zip is  coppied

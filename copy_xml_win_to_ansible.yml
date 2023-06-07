@@ -1,0 +1,16 @@
+---
+- name: Copy XML files and directories from Windows to Ansible server
+  hosts: win
+  gather_facts: false
+
+  tasks:
+    - name: Synchronize XML files and directories
+      become: true
+      ansible.posix.synchronize:
+      src: D:\copy-test\*.xml #Windows source folder with files
+      dest: /tmp/xml_files/ #Ansible destination folder
+      mode: pull
+      rsync_opts:
+        - '--include=*.xml'  # Copy only XML files
+        - '--include=*/'  # Include directories
+        - '--exclude=*'  # Exclude all other files
