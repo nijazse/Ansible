@@ -1,0 +1,57 @@
+# Get vault Apache Certificate Files data
+- name: Fetch Certificate File
+  community.hashi_vault.vault_kv2_get:
+    validate_certs: false
+    url: "{{ ansible_hashi_vault_url }}"
+    engine_mount_point: "{{ ansible_hashi_vault_mount_point }}"
+    path: "{{ certificate_file_vault_path }}"
+    auth_method: "{{ ansible_hashi_vault_auth_method }}"
+    role_id: "{{ansible_hashi_vault_approle}}"
+    token: "{{ ansible_hashi_vault_token }}"
+  register: vault_certificate_file_data
+
+- name: Fetch Certificate Key File
+  community.hashi_vault.vault_kv2_get:
+    validate_certs: false
+    url: "{{ ansible_hashi_vault_url }}"
+    engine_mount_point: "{{ ansible_hashi_vault_mount_point }}"
+    path: "{{ certificate_key_file_vault_path }}"
+    auth_method: "{{ ansible_hashi_vault_auth_method }}"
+    role_id: "{{ansible_hashi_vault_approle}}"
+    token: "{{ ansible_hashi_vault_token }}"
+  register: vault_certificate_key_file_data
+
+- name: Fetch Certificate Chain File
+  community.hashi_vault.vault_kv2_get:
+    validate_certs: false
+    url: "{{ ansible_hashi_vault_url }}"
+    engine_mount_point: "{{ ansible_hashi_vault_mount_point }}"
+    path: "{{ certificate_chain_file_vault_path }}"
+    auth_method: "{{ ansible_hashi_vault_auth_method }}"
+    role_id: "{{ansible_hashi_vault_approle}}"
+    token: "{{ ansible_hashi_vault_token }}"
+  register: vault_certificate_chain_file_data
+
+- name: Store Certificate File to Apache
+  copy:
+    content: "{{ vault_certificate_file_data.results.secret.value }}"
+    dest: "{{ certificate_file }}"
+    mode: '0644'
+
+- name: Store Certificate Key File to Apache
+  copy:
+    content: "{{ vault_certificate_key_file_data.results.secret.value }}"
+    dest: "{{ certificate_key_file }}"
+    mode: '0644'
+
+- name: Store Certificate Key File to Apache
+  copy:
+    content: "{{ vault_certificate_chain_file_data.results.secret.value }}"
+    dest: "{{ certificate_chain_file }}"
+    mode: '0644'
+
+  handlers:
+    - name: Restart Apache
+      service:
+        name: httpd
+        state: restarted
