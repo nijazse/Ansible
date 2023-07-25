@@ -1,0 +1,80 @@
+# Get vault IIS Certificate Files data
+- name: Fetch Certificate File
+  community.hashi_vault.vault_kv2_get:
+    validate_certs: false
+    url: "{{ ansible_hashi_vault_url }}"
+    engine_mount_point: "{{ ansible_hashi_vault_mount_point }}"
+    path: "{{ certificate_file_vault_path }}"
+    auth_method: "{{ ansible_hashi_vault_auth_method }}"
+    role_id: "{{ansible_hashi_vault_approle}}"
+    token: "{{ ansible_hashi_vault_token }}"
+  register: vault_certificate_file_data
+
+- name: Fetch Certificate Key File
+  community.hashi_vault.vault_kv2_get:
+    validate_certs: false
+    url: "{{ ansible_hashi_vault_url }}"
+    engine_mount_point: "{{ ansible_hashi_vault_mount_point }}"
+    path: "{{ certificate_key_file_vault_path }}"
+    auth_method: "{{ ansible_hashi_vault_auth_method }}"
+    role_id: "{{ansible_hashi_vault_approle}}"
+    token: "{{ ansible_hashi_vault_token }}"
+  register: vault_certificate_key_file_data
+
+- name: Fetch Password to create PFX File for IIS WebServers
+  community.hashi_vault.vault_kv2_get:
+    validate_certs: false
+    url: "{{ ansible_hashi_vault_url }}"
+    engine_mount_point: "{{ ansible_hashi_vault_mount_point }}"
+    path: "{{ vault_pfx_password_path }}"
+    auth_method: "{{ ansible_hashi_vault_auth_method }}"
+    role_id: "{{ansible_hashi_vault_approle}}"
+    token: "{{ ansible_hashi_vault_token }}"
+  register: vault_pfx_password_data
+
+#Local paths on ansible server
+  pfx_path: "/tmp/star.example-domain.com.pfx"
+  crt_path: "/tmp/star.example-domain.com.crt"
+  key_path: "/tmp/star.example-domain.com.key"
+
+- name: Store Certificate File to Ansible Server
+  copy:
+    content: "{{ vault_certificate_file_data.results.secret.value }}"
+    dest: "{{ crt_path }}"
+    mode: '0644'
+  delegate_to: localhost
+
+- name: Store Certificate Key File to Ansible Server
+  copy:
+    content: "{{ vault_certificate_key_file_data.results.secret.value }}"
+    dest: "{{ key_path }}"
+    mode: '0644'
+  delegate_to: localhost
+
+- name: Use Certificate and a Key files to generate PFX file
+  shell: "openssl pkcs12 -export -out {{ pfx_path }} -inkey {{ key_path }} -in {{ crt_path }} -password pass:{{ vault_pfx_password_data.results.secret.value }}"
+  delegate_to: localhost
+
+- name: Copy PFX file to Windows server
+  win_copy:
+    src: "{{ pfx_path }}"
+    dest: C:\Temp
+
+- name: Import certificate be used by IIS
+  ansible.windows.win_certificate_store:
+    path: C:\Temp\star.example-domain.com.pfx
+    file_type: pkcs12
+    password: {{ vault_pfx_password_data.results.secret.value }}
+    store_location: LocalMachine
+    key_storage: machine
+    state: present
+  become: true
+  become_method: runas
+  become_user: SYSTEM
+
+- name: Add a HTTPS binding on port 443 to example-domain.com
+  community.windows.win_iis_webbinding:
+    name: example-domain.com
+    protocol: https
+    port: 443
+    state: present
